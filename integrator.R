@@ -61,6 +61,12 @@ meps_2022 = meps_2022 %>%
 # bind MEPS dataframes
 integrated_data = rbind(meps_2014,meps_2016,meps_2018,meps_2020,meps_2021,meps_2022)
 
+# retain drugs repeated in all 6 years, drop others
+integrated_data <- integrated_data %>%
+  group_by(Drug) %>%
+  filter(n_distinct(Year) == 6) %>%
+  ungroup()
+
 # remove irrelevant columns for predicting drug from demographics
 integrated_data = integrated_data %>%
   select(-c(Administration_route,Form.Units,NDC,Sum.of.all.payments,Form))

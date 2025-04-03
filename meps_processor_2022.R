@@ -631,8 +631,10 @@ meps_pop = meps_pop %>%
   filter(Personal_income >= 0) %>%
   filter(Family_income >= 0)
 
-# Link by Person ID
-meps_clean = left_join(meps_clean,meps_pop,by="Person ID")
+# Link by Person ID (retaining people in "No drug" category too)
+meps_clean = merge(meps_clean,meps_pop,by="Person ID",all=TRUE)
+meps_clean = meps_clean %>%
+  mutate(Drug = ifelse(is.na(Drug), "No drugs", Drug))
 
 # Add column for concentration calculation (assuming sewershed size is 100,000
 # people, 310.404 L wastewater per person, divide by 4 to account for medication
