@@ -29,7 +29,8 @@ from torch.utils.data import DataLoader, Dataset
 #   python custom_nn_super_dataset.py --feature-set demographics
 #
 # Run with class filtering (only drugs with recall >= 0.5 in CV):
-#   python custom_nn_super_dataset.py --feature-set expanded --class-filter-csv ../Custom_NN/Results/expanded/new_nn_per_drug_metrics.csv --run-name subgroup
+#   python custom_nn_super_dataset.py --feature-set expanded --class-filter-csv Results/expanded/new_nn_per_drug_metrics.csv --run-name subgroup
+#   Note: run without --class-filter-csv first to generate new_nn_per_drug_metrics.csv
 #
 # Results are saved to:
 #   Current work/Custom_NN/Results/<feature_set>/
@@ -78,11 +79,29 @@ def load_training_frame(feature_set: str) -> pd.DataFrame:
     frame = cleaned_read_csv(DATA_DIR / "super_integrated_data.csv")
     metadata = cleaned_read_csv(METADATA_DIR / "metadata.csv")[["Observation_ID", "Person_ID"]]
     frame = frame.merge(metadata, on="Observation_ID", how="left")
+
+    # Fill no-prescription rows with -1 sentinel for numeric prescription features
+    # and '-1' string for categorical Form column
+    for col in ["Quantity", "Strength", "Day_Supply"]:
+        if col in frame.columns:
+            frame[col] = frame[col].fillna(-1)
+    if "Form" in frame.columns:
+        frame["Form"] = frame["Form"].fillna("-1")
+
     return frame
 
 
 def load_validation_frame(feature_set: str) -> pd.DataFrame | None:
-    return cleaned_read_csv(DATA_DIR / "super_data_2022.csv")
+    frame = cleaned_read_csv(DATA_DIR / "super_data_2022.csv")
+
+    # Same sentinel filling as training
+    for col in ["Quantity", "Strength", "Day_Supply"]:
+        if col in frame.columns:
+            frame[col] = frame[col].fillna(-1)
+    if "Form" in frame.columns:
+        frame["Form"] = frame["Form"].fillna("-1")
+
+    return frame
 
 
 def get_feature_columns(feature_set: str) -> Tuple[List[str], List[str]]:
@@ -562,7 +581,7 @@ def run_pipeline(args: argparse.Namespace) -> None:
     cv_summary = pd.DataFrame(
         [
             {
-                "model": "NewNNApproach",
+                "model": "CustomNN_SuperDataset",
                 "feature_set": args.feature_set,
                 "accuracy_mean": fold_metrics_df["accuracy"].mean(),
                 "accuracy_std": fold_metrics_df["accuracy"].std(ddof=1),
@@ -623,7 +642,7 @@ def run_pipeline(args: argparse.Namespace) -> None:
         print("\n2022 validation")
         print(json.dumps(validation_scores, indent=2))
     else:
-        print("\nno external validation run for expanded mode because 2022 prescription features are not present.")
+        print("\nno 2022 validation frame available.")
 
     run_config = {
         "feature_set": args.feature_set,
