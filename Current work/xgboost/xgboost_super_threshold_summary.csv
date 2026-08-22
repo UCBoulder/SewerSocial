@@ -1,2 +1,0 @@
-model,dataset,accuracy_hard,macro_recall_hard,macro_f2_hard,drugs_recalled_hard,accuracy_thresh,macro_recall_thresh,macro_precision_thresh,macro_f2_thresh,drugs_recalled_thresh,drugs_recovered_by_thresh
-XGBoost_Super_Threshold,MEPS_2022_internal_validation,0.3543596195116953,0.2924937756435142,0.2754009844064999,176,0.3054380681850526,0.3142679552498917,0.29416009843288443,0.2773472802185946,181,5
