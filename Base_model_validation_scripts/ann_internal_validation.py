@@ -131,13 +131,13 @@ def run_meps_2022_knn_pipeline(data_path, output_filename, preprocessor_path, en
     feature_cols = ['Age', 'Sex', 'Family_income', 'Insurance_coverage', 'Race_ethnicity', 
                     'Quantity', 'Form', 'Strength', 'Day_Supply']
 
-    # Load 2022 super dataset matching original notebook block
+    # Load 2022 super dataset
     data_2022 = pd.read_csv(data_path, sep=None, engine='python', encoding='utf-8-sig')
     
     if 'Unnamed: 0' in data_2022.columns:
         data_2022 = data_2022.drop(columns=['Unnamed: 0'])
 
-    # Same sentinel filling as notebook training configuration
+    # Same sentinel filling as training
     mask = data_2022['Drug'] == 'no prescriptions'
     data_2022.loc[mask, 'Form'] = data_2022.loc[mask, 'Form'].fillna('-1')
 
@@ -148,7 +148,7 @@ def run_meps_2022_knn_pipeline(data_path, output_filename, preprocessor_path, en
     data_2022 = data_2022[data_2022['Drug'].isin(le.classes_)].reset_index(drop=True)
     print(f"Rows after initial class filter: {len(data_2022):,}")
 
-    # Sequential hierarchical median imputation steps from notebook
+    # Sequential hierarchical median imputation steps
     print("Applying hierarchical missing value imputations...")
     age_medians = joblib.load('knn_super_age_medians.joblib')
     strength_medians = joblib.load('knn_super_strength_medians.joblib')
@@ -180,7 +180,7 @@ def run_meps_2022_knn_pipeline(data_path, output_filename, preprocessor_path, en
 
     X_2022 = data_2022[feature_cols].copy()
 
-    # 5. Apply preprocessor pipeline using training metrics (transform only, no refitting)
+    # Apply preprocessor pipeline using training metrics (transform only, no refitting)
     X_2022_processed = preprocessor.transform(X_2022)
 
     print(f"Preprocessed features array shape: {X_2022_processed.shape}")
@@ -189,7 +189,7 @@ def run_meps_2022_knn_pipeline(data_path, output_filename, preprocessor_path, en
     first_batch = True
     n_train = global_knn_index._raw_data.shape[0]
 
-    # 7. Batched Graph Querying & Optimized CSR Matrix Prediction Steps
+    # Batched Graph Querying & Optimized CSR Matrix Prediction Steps
     for i in range(0, len(X_2022_processed), BATCH_SIZE):
         batch_x = X_2022_processed[i : i + BATCH_SIZE]
         
@@ -237,7 +237,7 @@ def run_meps_2022_knn_pipeline(data_path, output_filename, preprocessor_path, en
 
 
 if __name__ == "__main__":
-    # --- GLOBAL SYSTEM CONFIGURATIONS ---
+    # GLOBAL SYSTEM CONFIGURATIONS
     BATCH_SIZE = 100000
     THRESHOLD = 1 / 217
     
