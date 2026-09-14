@@ -70,8 +70,6 @@ def _assign_income_bracket(df, income_bin_edges, available_years):
         if edges is not None:
             binned = pd.cut(group['Family_income'], bins=edges, labels=False, include_lowest=True)
             income_bracket.loc[group.index] = binned + 1
-        # edges is None only if that training year itself couldn't form 4 bins —
-        # falls through to NaN, caught by the median cascade in apply_age_medians.
     return income_bracket
  
 def apply_age_medians(df, medians):
@@ -80,7 +78,6 @@ def apply_age_medians(df, medians):
  
     df['income_bracket'] = _assign_income_bracket(df, medians['income_bin_edges'], available_years)
  
-    # Map every row's Year to its nearest training year for all lookups below.
     effective_year = df['Year'].apply(lambda y: _nearest_year(y, available_years))
  
     hh_idx    = pd.MultiIndex.from_arrays([effective_year, df['Household_ID']])
