@@ -27,11 +27,11 @@ print(f'\nData directory: {DATA_DIR}')
 
 # Define which model probability files to load.
 MODEL_FILES = [
-    ('XGBoost_Super', 'xgboost_super_proba_2022.csv'),
-    ('RealMLP_Super', 'realmlp_super_proba_2022.csv'),
-    ('KNN_Super',     'knn_super_proba_2022.csv'),
-    ('SVM_Super',     'svm_super_proba_2022.csv'),
-    ('TabICL',        'tabicl_super_proba_2022.csv'),
+    ('XGBoost_Super', 'xgboost_super_proba_2022.csv/xgboost_super_proba_2022.csv'),
+    ('RealMLP_Super', 'realmlp_super_proba_2022.csv/realmlp_super_proba_2022.csv'),
+    ('KNN_Super',     'knn_super_proba_2022.csv/knn_super_proba_2022.csv'),
+    ('SVM_Super',     'svm_super_proba_2022.csv/svm_super_proba_2022.csv'),
+    ('TabICL',        'tabicl_super_proba_2022.csv/tabicl_super_proba_2022.csv'),
 ]
 
 # Check which files are present before loading.
