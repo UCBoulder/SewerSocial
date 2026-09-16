@@ -27,8 +27,6 @@ print('numpy version:       ', np.__version__)
 print('scikit-learn version:', sklearn.__version__)
 
 # Hard stop if XGBoost version is below 2.1.0.
-# Native categorical support and learned missing directions
-# require XGBoost 2.1+ — earlier versions will silently produce wrong results.
 from packaging import version
 assert version.parse(xgb.__version__) >= version.parse('2.1.0'), \
     f"ERROR: XGBoost 2.1+ required, found {xgb.__version__} — run: pip install 'xgboost>=2.1.0'"
@@ -135,10 +133,6 @@ def run_meps_2022_xgboost_pipeline(data_path, output_filename, encoder_path, mod
     strength_medians = joblib.load('xgboost_super_strength_medians.joblib')
     day_supply_medians = joblib.load('xgboost_super_day_supply_medians.joblib')
 
-     # Guard against a stale medians that predates the
-    # nearest-year fallback logic. Without this check, a missing key would only
-    # surface as a KeyError deep inside apply_age_medians, which is harder to
-    # diagnose than a clear message here.
     required_age_keys = {
         'income_bin_edges', 'hh_medians', 'grp_medians',
         'yr_medians', 'global_median', 'available_years',
@@ -169,6 +163,22 @@ def run_meps_2022_xgboost_pipeline(data_path, output_filename, encoder_path, mod
 
     print("Processing predictions in memory-safe batches...")
 
+    # Winner-takes-all approach to select winners per row and compute performance metrics
+    drug_class_list = list(le.classes_)
+    if 'no prescriptions' in drug_class_list:
+        no_presc_idx = drug_class_list.index('no prescriptions')
+    else:
+        no_presc_idx = None
+        print("WARNING: 'no prescriptions' not found in le.classes_; "
+              "low-confidence rows will keep their raw argmax instead of "
+              "falling back to a no-prescriptions prediction.")
+
+    y_pred_all = np.empty(len(X_2022), dtype=int)
+
+    # Load threshold tuning map once prior to batch processing
+    t_map = joblib.load(threshold_map_path)
+    t_vector = np.array([t_map.get(drug, THRESHOLD) for drug in le.classes_])
+
     first_batch = True
 
     # Batched Graph Querying & Optimized CSR Matrix Prediction Steps
@@ -189,9 +199,6 @@ def run_meps_2022_xgboost_pipeline(data_path, output_filename, encoder_path, mod
         proba_df[prob_cols] = proba_df[prob_cols].where(proba_df[prob_cols] >= THRESHOLD, 0.0)
 
         # Apply threshold tuning
-        t_map = joblib.load(threshold_map_path)
-        t_vector = np.array([t_map.get(drug, THRESHOLD) for drug in le.classes_])
-
         probs = proba_df[prob_cols].values 
         adjusted_probs = probs / t_vector[np.newaxis, :]
         max_vals = adjusted_probs.max(axis=1, keepdims=True)
@@ -199,6 +206,13 @@ def run_meps_2022_xgboost_pipeline(data_path, output_filename, encoder_path, mod
         final_probs = adjusted_probs / max_vals
         final_probs[final_probs < THRESHOLD] = 0.0
         proba_df[prob_cols] = final_probs
+
+        # Derive hard predictions AFTER threshold tuning adjustments
+        row_max = final_probs.max(axis=1)
+        batch_pred_idx = final_probs.argmax(axis=1)
+        if no_presc_idx is not None:
+            batch_pred_idx[row_max < THRESHOLD] = no_presc_idx
+        y_pred_all[i : i + len(batch_x)] = batch_pred_idx
 
         # Incrementally stream batch output out to gzip disk target
         mode = 'w' if first_batch else 'a'
@@ -216,10 +230,61 @@ def run_meps_2022_xgboost_pipeline(data_path, output_filename, encoder_path, mod
 
     print(f"Inference Completed! Saved out to: {output_filename}")
 
+    # validation metrics
+    print("\nScoring predictions against 2022 ground truth...")
+
+    acc   = accuracy_score(y_2022_encoded, y_pred_all)
+    kappa = cohen_kappa_score(y_2022_encoded, y_pred_all)
+    mcc   = matthews_corrcoef(y_2022_encoded, y_pred_all)
+
+    evaluator      = ClassificationMetric(y_2022_encoded, y_pred_all)
+    macro_prec     = evaluator.precision_score(average='macro')
+    micro_prec     = evaluator.precision_score(average='micro')
+    macro_recall   = evaluator.recall_score(average='macro')
+    micro_recall   = evaluator.recall_score(average='micro')
+    macro_f1       = evaluator.f1_score(average='macro')
+    micro_f1       = evaluator.f1_score(average='micro')
+    macro_f2       = evaluator.fbeta_score(beta=2, average='macro')
+    micro_f2       = evaluator.fbeta_score(beta=2, average='micro')
+
+    report = classification_report(
+        y_2022_encoded, y_pred_all,
+        labels=np.arange(len(le.classes_)),
+        target_names=le.classes_,
+        output_dict=True,
+        zero_division=0,
+    )
+    per_drug_recall = pd.Series({
+        drug: report[drug]['recall'] for drug in le.classes_ if drug in report
+    })
+    drugs_recall_ge_075 = int((per_drug_recall >= 0.75).sum())
+    print(f"Drugs with 2022 recall >= 0.75: {drugs_recall_ge_075} / {len(per_drug_recall)}")
+
+    validation_summary = pd.DataFrame([{
+        'model':               MODEL_NAME,
+        'dataset':             'MEPS_2022_internal_validation',
+        'accuracy':            acc,
+        'cohen_kappa':         kappa,
+        'mcc':                 mcc,
+        'macro_precision':     macro_prec,
+        'micro_precision':     micro_prec,
+        'macro_recall':        macro_recall,
+        'micro_recall':        micro_recall,
+        'macro_f1':            macro_f1,
+        'micro_f1':            micro_f1,
+        'macro_f2':            macro_f2,
+        'micro_f2':            micro_f2,
+        'drugs_recall_ge_075': drugs_recall_ge_075,
+        'total_drugs':         len(per_drug_recall),
+    }])
+    validation_summary.to_csv(VALIDATION_SUMMARY_FILE, index=False)
+    print(f"Saved validation summary to: {VALIDATION_SUMMARY_FILE}")
+
 if __name__ == "__main__":
     # GLOBAL SYSTEM CONFIGURATIONS
     BATCH_SIZE = 100000
     THRESHOLD = 1 / 217
+    MODEL_NAME = "XGBoost_Super"
     
     # Model configuration mappings
     LABEL_ENCODER_PATH = "xgboost_super_label_encoder.joblib"
@@ -229,6 +294,7 @@ if __name__ == "__main__":
     # Input files matching the MEPS 2022 validation block environment
     MY_2022_DATA = "super_data_2022.csv"
     OUTPUT_FILE = "xgboost_super_proba_2022.csv.gz"
+    VALIDATION_SUMMARY_FILE = "xgboost_super_validation_summary.csv"
 
     # Start target run
     run_meps_2022_xgboost_pipeline(
