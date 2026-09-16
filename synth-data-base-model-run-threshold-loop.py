@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-"""synth-data-inference-city.py
-Runs inference for one city-level dataset at a time.
-Change ACTIVE_CITY to switch between cities, then re-run.
-Compatible with Python 3.12.7.
-"""
+# Runs all base models on external, synthetically generated data for a given community.
 
 import joblib
 import xgboost as xgb
@@ -25,8 +20,7 @@ from sklearn.neighbors import sort_graph_by_row_values
 OHE_SPARSE_KWARG = 'sparse_output' if version.parse(sklearn.__version__) >= version.parse('1.2') else 'sparse'
 
 # =============================================================================
-# 1. ACTIVE CITY — change this to switch between runs
-# Options: "clark_county_nv" | "urbana_champaign_il" | "sandwich_ma"
+# 1. ACTIVE CITY — change this to switch between runs for your specific city
 # =============================================================================
 #ACTIVE_CITY = "clark_county_nv"
 #ACTIVE_CITY = "urbana_champaign_il"
@@ -56,7 +50,6 @@ encoder_path      = "xgboost_super_label_encoder.joblib"
 
 # =============================================================================
 # 3. CUSTOM CLASSES AND FUNCTIONS
-# Must be defined before loading any joblib artifacts that reference them.
 # =============================================================================
 class SelectiveRobustScaler(BaseEstimator, TransformerMixin):
     def __init__(self, drug_encoded_val, sentinel_value=-1.0):
@@ -73,7 +66,6 @@ class SelectiveRobustScaler(BaseEstimator, TransformerMixin):
     def transform(self, X):
         X_scaled = self.scaler.transform(X)
         return np.nan_to_num(X_scaled, nan=self.sentinel_value)
-
 
 @njit
 def hassanat_distance(a, b):
@@ -114,12 +106,10 @@ TRAINING_FORMS = [
     'TOPICAL', 'TRANSDERMAL', 'VAGINAL'
 ]
 
-
 def _apply_form_categories(data):
     data['Form'] = data['Form'].astype(str)
     data['Form'] = pd.Categorical(data['Form'], categories=TRAINING_FORMS)
     return data
-
 
 def preprocess_for_xgboost(data, categorical_cols, numeric_rx_cols):
     data.replace("NONE", np.nan, inplace=True)
@@ -133,7 +123,6 @@ def preprocess_for_xgboost(data, categorical_cols, numeric_rx_cols):
     data = _apply_form_categories(data)
     return xgb.DMatrix(data, enable_categorical=True)
 
-
 def preprocess_for_realmlp(data, categorical_cols, numeric_rx_cols):
     data.replace("NONE", np.nan, inplace=True)
     fill_values = {col: -1 for col in numeric_rx_cols}
@@ -145,7 +134,6 @@ def preprocess_for_realmlp(data, categorical_cols, numeric_rx_cols):
         data[col] = data[col].astype('category')
         data[col] = data[col].cat.reorder_categories(sorted(data[col].unique()), ordered=False)
     return _apply_form_categories(data)
-
 
 def preprocess_for_tabicl(data, categorical_cols, numeric_rx_cols):
     data.replace("NONE", np.nan, inplace=True)
@@ -163,7 +151,6 @@ def preprocess_for_tabicl(data, categorical_cols, numeric_rx_cols):
         data[col] = data[col].astype('int32')
     return _apply_form_categories(data)
 
-
 def preprocess_for_knn_svm(data, numeric_rx_cols, categorical_cols, preprocessor):
     data.replace("NONE", np.nan, inplace=True)
     data['Form'] = data['Form'].fillna('-1').astype(str).str.strip()
@@ -174,7 +161,6 @@ def preprocess_for_knn_svm(data, numeric_rx_cols, categorical_cols, preprocessor
     for col in numeric_rx_cols:
         data[col] = pd.to_numeric(data[col], errors='coerce').astype('float32')
     return preprocessor.transform(data)
-
 
 # =============================================================================
 # 5. LOAD AND PREDICT
@@ -242,7 +228,6 @@ def load_and_predict(file_path, raw_data):
         print(f"Error during prediction for {file_name}: {e}")
         return None
 
-
 # =============================================================================
 # 6. RUN INFERENCE FOR THE ACTIVE CITY
 # =============================================================================
@@ -289,7 +274,6 @@ def run_inference(model_key, data_path, threshold_map_path=None):
         gc.collect()
 
     print(f"  Saved: {output_filename}")
-
 
 # =============================================================================
 # 7. MAIN EXECUTION
