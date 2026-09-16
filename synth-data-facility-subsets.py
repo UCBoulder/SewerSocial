@@ -1,17 +1,14 @@
-# -*- coding: utf-8 -*-
-"""synth-data-facility-subsets.py
-Slices city-level probability output files to generate facility-level subsets.
-Run this after synth-data-inference-city.py has been run for all 3 cities.
-No model inference is performed here — only sampling from existing .csv.gz files.
-Compatible with Python 3.12.7.
-"""
+# Randomly sample from community-level probability output to generate predictions for
+# facilities of the correct population size.
 
+# import necessary libraries
 import pandas as pd
 import os
 import gc
 
 # =============================================================================
 # 1. FACILITY CONFIGURATION
+# name:     file structure for output file
 # parent:   must match the city name prefix used in the city-level output files
 # facility: label used in the output filename
 # sample_n: number of rows to sample (same seed as original inference scripts)
