@@ -361,7 +361,7 @@ for container, model_name in zip(ax2.containers, model_order):
         )
 
 # ---------------------------------------------------------------------
-# PLOT 3b: Number of Drugs Reaching Recall >= 0.75 (From 2022 Summaries)
+# PLOT 3b: Number of Drugs Reaching Recall >= 0.75 (Descending, Uniform Color)
 # ---------------------------------------------------------------------
 def parse_recall_count(val):
     """Parses integer, float, list, or string representation of list/count."""
@@ -399,13 +399,14 @@ for summary in all_summaries:
         threshold_counts[clean_name] = parse_recall_count(raw_val)
 
 df_counts = pd.DataFrame(list(threshold_counts.items()), columns=['Model', 'Passing_Count'])
-df_counts = df_counts.sort_values(by='Passing_Count', ascending=False).reset_index(drop=True)
 
-colors = ['#1b9e77' if 'Ensemble' in model else '#2b5c8f' for model in df_counts['Model']]
+# Strictly sort in descending order
+df_counts = df_counts.sort_values(by='Passing_Count', ascending=False).reset_index(drop=True)
 
 sns.barplot(
     data=df_counts, x='Model', y='Passing_Count',
-    palette=colors, alpha=0.85, ax=ax3
+    order=df_counts['Model'], color='#2b5c8f',
+    alpha=0.85, ax=ax3
 )
 
 ax3.axhline(y=217, color='#2b5c8f', linestyle='--', linewidth=2.5)
