@@ -168,6 +168,7 @@ def run_meps_2022_svm_pipeline(data_path, output_filename, preprocessor_path, en
 
     # Isolate targets and identifiers before transforming features
     obs_ids = data_2022['Observation_ID'].values if 'Observation_ID' in data_2022.columns else None
+    y_2022_encoded = le.transform(data_2022['Drug'])
 
     X_2022 = data_2022[feature_cols].copy()
 
@@ -177,6 +178,21 @@ def run_meps_2022_svm_pipeline(data_path, output_filename, preprocessor_path, en
     print(f"Preprocessed features array shape: {X_2022_processed.shape}")
     print("Processing predictions in memory-safe batches...")
 
+    # Winner-takes-all approach to select winners per row and compute performance metrics
+    drug_class_list = list(le.classes_)
+    if 'no prescriptions' in drug_class_list:
+        no_presc_idx = drug_class_list.index('no prescriptions')
+    else:
+        no_presc_idx = None
+        print("WARNING: 'no prescriptions' not found in le.classes_; "
+              "low-confidence rows will keep their raw argmax instead of "
+              "falling back to a no-prescriptions prediction.")
+
+    # Accumulate hard predictions (small: one int per row) so we can score
+    # against the 2022 ground truth after streaming, without holding the
+    # full (rows x 217) probability matrix in memory.
+    y_pred_all = np.empty(len(X_2022), dtype=int)
+
     first_batch = True
 
     # Batched Graph Querying & Optimized CSR Matrix Prediction Steps
@@ -184,6 +200,14 @@ def run_meps_2022_svm_pipeline(data_path, output_filename, preprocessor_path, en
         batch_x = X_2022_processed[i : i + BATCH_SIZE]
         
         proba = model.predict_proba(batch_x)
+
+        # Derive hard predictions from the RAW probabilities, before the
+        # thresholding step below zeroes out low-confidence entries. 
+        row_max = proba.max(axis=1)
+        batch_pred_idx = proba.argmax(axis=1)
+        if no_presc_idx is not None:
+            batch_pred_idx[row_max <= THRESHOLD] = no_presc_idx
+        y_pred_all[i : i + len(batch_x)] = batch_pred_idx
         
         proba_df = pd.DataFrame(proba, columns=le.classes_)
         if obs_ids is not None:
@@ -209,11 +233,61 @@ def run_meps_2022_svm_pipeline(data_path, output_filename, preprocessor_path, en
 
     print(f"Inference Completed! Saved out to: {output_filename}")
 
+    # validation metrics
+    print("\nScoring predictions against 2022 ground truth...")
+
+    acc   = accuracy_score(y_2022_encoded, y_pred_all)
+    kappa = cohen_kappa_score(y_2022_encoded, y_pred_all)
+    mcc   = matthews_corrcoef(y_2022_encoded, y_pred_all)
+
+    evaluator      = ClassificationMetric(y_2022_encoded, y_pred_all)
+    macro_prec     = evaluator.precision_score(average='macro')
+    micro_prec     = evaluator.precision_score(average='micro')
+    macro_recall   = evaluator.recall_score(average='macro')
+    micro_recall   = evaluator.recall_score(average='micro')
+    macro_f1       = evaluator.f1_score(average='macro')
+    micro_f1       = evaluator.f1_score(average='micro')
+    macro_f2       = evaluator.fbeta_score(beta=2, average='macro')
+    micro_f2       = evaluator.fbeta_score(beta=2, average='micro')
+
+    report = classification_report(
+        y_2022_encoded, y_pred_all,
+        labels=np.arange(len(le.classes_)),
+        target_names=le.classes_,
+        output_dict=True,
+        zero_division=0,
+    )
+    per_drug_recall = pd.Series({
+        drug: report[drug]['recall'] for drug in le.classes_ if drug in report
+    })
+    drugs_recall_ge_075 = int((per_drug_recall >= 0.75).sum())
+    print(f"Drugs with 2022 recall >= 0.75: {drugs_recall_ge_075} / {len(per_drug_recall)}")
+
+    validation_summary = pd.DataFrame([{
+        'model':               MODEL_NAME,
+        'dataset':             'MEPS_2022_internal_validation',
+        'accuracy':            acc,
+        'cohen_kappa':         kappa,
+        'mcc':                 mcc,
+        'macro_precision':     macro_prec,
+        'micro_precision':     micro_prec,
+        'macro_recall':        macro_recall,
+        'micro_recall':        micro_recall,
+        'macro_f1':            macro_f1,
+        'micro_f1':            micro_f1,
+        'macro_f2':            macro_f2,
+        'micro_f2':            micro_f2,
+        'drugs_recall_ge_075': drugs_recall_ge_075,
+        'total_drugs':         len(per_drug_recall),
+    }])
+    validation_summary.to_csv(VALIDATION_SUMMARY_FILE, index=False)
+    print(f"Saved validation summary to: {VALIDATION_SUMMARY_FILE}")
 
 if __name__ == "__main__":
     # GLOBAL SYSTEM CONFIGURATIONS
     BATCH_SIZE = 100000
     THRESHOLD = 1 / 217
+    MODEL_NAME = "SVM_Super"
     
     # Model configuration mappings
     PREPROCESSOR_PATH = "knn_svm_preprocessor.joblib"
@@ -223,6 +297,7 @@ if __name__ == "__main__":
     # Input files matching the MEPS 2022 validation block environment
     MY_2022_DATA = "super_data_2022.csv"
     OUTPUT_FILE = "svm_super_proba_2022.csv.gz"
+    VALIDATION_SUMMARY_FILE = "svm_super_validation_summary.csv"
 
     # Start target run
     run_meps_2022_svm_pipeline(
