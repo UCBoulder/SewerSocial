@@ -1,7 +1,5 @@
 ## Training with cross-validation for the TabICL base model. The TabICL model predicts the target class (Drug) from the features (age, race/ethnicity, sex, family income, insurance coverage, prescription strength, prescription day supply, prescription quantity, and prescription form).
 
-# NOTE: Set your cache variable based on your system path below in Line 204.
-
 # prep to time code
 import time
 from datetime import timedelta
@@ -202,7 +200,7 @@ print("Starting final model training...")
 start_train = time.perf_counter()
 
 # Updated path for your Windows machine (CHANGE THIS FOR YOUR MACHINE)
-cache_dir = r"C:\Users\Owner\vanessa\tabicl_cache"
+cache_dir = os.path.join(os.path.expanduser("~"), "tabicl_cache")
 # test if directory exists
 os.makedirs(cache_dir, exist_ok=True)
 
