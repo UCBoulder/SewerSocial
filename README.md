@@ -50,7 +50,7 @@ The code for this study is written in both R and Python. For the Python scripts,
 ## Data/Functional Dependencies
 The MEPS data are available [here](https://data.mendeley.com/preview/wfmjbyjmk2?a=1820bd8a-0208-4a4a-b9bf-6dddd230003a). The data directory can be downloaded as a zip file and extracted into the same directory as the scripts. The following provides instructions to generate/access the data files and functions required for each script:
 
-# Pre-processing scripts:
+Pre-processing scripts:
 - get_ndc_codes_shareable.R:
     - Obtain an API key from [this link](https://open.fda.gov/apis/authentication/). A csv file must be uploaded in the script under section 4, Execution. This can be any csv file with an NDC column.
 - meps_processor_2014.R:
@@ -76,7 +76,7 @@ The MEPS data are available [here](https://data.mendeley.com/preview/wfmjbyjmk2?
 - correlation_checker.R: 
     - Run superdataset.ipynb to generate super_integrated_data.csv.
 
-# Base model scripts:
+Base model scripts:
 - ann_super_dataset.ipynb:
     - Run superdataset.ipynb to generate the super_integrated_data.csv dataset.
 - realmlp_super_dataset.ipynb:
@@ -90,7 +90,7 @@ The MEPS data are available [here](https://data.mendeley.com/preview/wfmjbyjmk2?
 - xgboost_super_threshold_tuning.ipynb:
     - Run superdataset.ipynb to generate the super_integrated_data.csv dataset. Run super_data_2022.ipynb to generate the super_data_2022.csv dataset. Run xgboost_super_dataset.ipynb to generate xgboost_all_versions_comparison.csv, xgboost_super_2022_per_drug_metrics.csv, xgboost_super_age_medians.joblib, xgboost_super_strength_medians.joblib, xgboost_super_day_supply_medians.joblib, and xgboost_super_final_model.ubj.
 
-# Base model validation scripts:
+Base model validation scripts:
 - ann_internal_validation.py:
     - Run super_data_2022.ipynb to generate the super_data_2022.csv dataset. Run xgboost_super_dataset.ipynb to generate xgboost_super_label_encoder.joblib (same across all models). Run ann_super_dataset.ipynb to generate knn_svm_preprocessor.joblib (saved in that notebook as knn_super_preprocessor.joblib and same between ANN/KNN and SVM models), knn_final_prebuilt_index.joblib, knn_super_clf_only.joblib, knn_super_age_medians.joblib, knn_super_strength_medians.joblib, and knn_super_day_supply_medians.joblib.
 - realmlp_internal_validation.py:
@@ -105,7 +105,7 @@ The MEPS data are available [here](https://data.mendeley.com/preview/wfmjbyjmk2?
 - ensemble_training_internal_validation_original.py:
     - Run all base model validation scripts to generate the _super_proba_2022.csv and _super_validation_summary.csv files. Run all base model scripts to generate the _super_per_drug_recall.csv, xgboost_super_label_encoder.joblib, and xgboost_threshold_map.joblib files. Run super_data_2022.ipynb to generate the super_data_2022.csv dataset. 
 
-# Synthetic external data generation scripts:
+Synthetic external data generation scripts:
 - app.R:
     - Access pharmuse.csv from data_dependencies. The pharmflush_functions.R file is included in the synthetic_external_data_generation_scripts folder with app.R. The file test_file.csv that is in that same folder can be used to upload to the Shiny app once deployed.
 - prescription_imputation_function.R:
@@ -120,7 +120,7 @@ The MEPS data are available [here](https://data.mendeley.com/preview/wfmjbyjmk2?
 - ensemble_model_application_loop.py:
     - Run prescription_imputation_function.R to generate the files of the form CITY_demo_rx.csv. Run synth-data-base-model-run-threshold-loop.py to generate files in the form {city name}_{model name}_threshold_results.csv.gz. Run synth-data-facility-subsets.py to generate files in the form {city name}_{facility name}_{model name}_threshold_results.csv.gz. Run xgboost_super_dataset.ipynb to generate xgboost_super_label_encoder.joblib. Run ensemble_training_internal_validation_original.py to generate specialist_map_ensemble.joblib and comparison_per_drug.joblib. Access pharmuse.csv via data_dependencies folder (more info in [this paper](https://doi.org/10.1002/wer.70357), where PharmUse is Table S4). 
 
-# Statistical analysis scripts:
+Statistical analysis scripts:
 - analyze_city_differences.py:
     - Run ensemble_model_application_loop.py. This generates clark_county_nv_indiv_predictions_and_mass.csv, urbana_champaign_il_indiv_predictions_and_mass.csv, and sandwich_ma_indiv_predictions_and_mass.csv. These can be used to run the analyze_city_differences.py script. Notably, these CSV files can be swapped for other external data if other communities are simulated in ensemble_model_application_loop.py. 
 - analyze_drug_patterns_updated.py:
