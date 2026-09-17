@@ -33,10 +33,10 @@ CITY_DATASETS = {
 }
 
 MODELS_CONFIG = {
-    #"xgboost": {"model_file": "xgboost_super_final_model.ubj"},
-    #"knn":     {"model_file": "knn_super_clf_only.joblib"},
-    #"svm":     {"model_file": "svm_super_final_model.joblib"},
-    #"tabicl":  {"model_file": "tabicl_trained_model.pkl"},
+    "xgboost": {"model_file": "xgboost_super_final_model.ubj"},
+    "knn":     {"model_file": "knn_super_clf_only.joblib"},
+    "svm":     {"model_file": "svm_super_final_model.joblib"},
+    "tabicl":  {"model_file": "tabicl_trained_model.pkl"},
     "realmlp": {"model_file": "realmlp_super_final_model.joblib"},
 }
 
