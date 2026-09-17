@@ -146,6 +146,13 @@ for _, row in comparison_per_drug.iterrows():
 
 print(f"Ensemble configuration complete: {len(specialist_map)} specialist drugs mapped.")
 
+# save list of included drugs in the model:
+specialist_df = pd.DataFrame(
+    list(specialist_map.items()), columns=['Drug', 'Best_Model']
+)
+specialist_df.to_csv('specialist_map.csv', index=False)
+specialist_df
+
 # APPLY THE SPECIALIST MAP FILTER BEFORE BUILDING PREDICTIONS/METRICS
 comparison_per_drug['Best_Model'] = comparison_per_drug['Drug'].map(specialist_map).fillna('None/Excluded')
 
