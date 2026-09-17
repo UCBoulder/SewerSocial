@@ -2,10 +2,10 @@
 
 The purpose of this study is to predict active pharmaceutical ingredient (API) influent concentrations and mass loads in sewersheds with diverse demographics. Data are from the Agency for Healthcare Research and Quality's Medical Expenditure Panel Survey (MEPS) for the years 2014, 2016, 2018, 2020, 2021, and 2022. These data include household-reported prescription consumption data for a nationally representative sample of Americans and demographic data for the person to whom each medication is prescribed (notably, these data are separate but linked by a common identifier column). The data from 2014-2021 are used for training with cross-validation and testing, while the data from 2022 are reserved for additional validation. External data are used for testing the model-predicted wastewater mass loads against literature-reported mass loads. In total, 5 base models (XGBoost, TabICL, RealMLP, k-nearest neighbor with Hassanat distance, and support vector machine) are trained on the 2014-2021 data. From this training, a specialist map is created for each API, linking it to the model that provides the highest recall. This is used to build a winner-takes-all ensemble model from the 5 base models. The ensemble model drops any APIs for which recall is less than 75%. Validation and testing scripts for the 2022 and external data are additionally provided. Scripts performing statistical analyses on model outputs are also provided. 
 
-## Package Dependencies
+# Package Dependencies
 The code for this study is written in both R and Python. For the Python scripts, load the requirements.txt file to access the Python environment needed to run all models and scripts in Python. For the R scripts, use the .Rprofile and renv.lock and run renv::restore() in the console in RStudio.
 
-## Utility of Each Program
+# Utility of Each Program
 - pre_processing_scripts:
     - get_ndc_codes_shareable.R - queries the openFDA API for excretion route data for each drug.
     - meps_processor_{year}.R - each script with this naming format takes in the given year's MEPS prescription and demographic data as MEPS_data_{year}.txt and MEPS_pop_data_{year}.txt, respectively. These are pre-processing scripts that clean the data and integrate the prescription data and the demographic data by the linking variable Person ID. The output is a single, cleaned csv file called meps_clean_{year}.csv that combines the prescription and demographic data for the given year.
@@ -47,10 +47,10 @@ The code for this study is written in both R and Python. For the Python scripts,
     - analyze_city_differences.py - conducts chi-square and Kruskal-Wallis tests to determine if there are statistically significant differences in prescription rate or mass load of APIs between the communities of Sandwich, MA, Urbana-Champaign, IL, and Clark County, NV. Also calculates fold change in mass load between these communities.
     - analyze_drug_patterns_updated.py - conducts chi-square and Mann-Whitney U tests to determine if there are statistically significant differences in features between APIs included in the model and excluded from the model. Also checks if there are statistically significant differences in features for those on a prescription versus in the "no prescriptions" class. Finally, calculates fold changes in numeric features between APIs and performs a logistic regression to compute odds ratios of having different features.
 
-## Data/Functional Dependencies
+# Data/Functional Dependencies
 The MEPS data are available [here](https://data.mendeley.com/preview/wfmjbyjmk2?a=1820bd8a-0208-4a4a-b9bf-6dddd230003a). The data directory can be downloaded as a zip file and extracted into the same directory as the scripts. The following provides instructions to generate/access the data files and functions required for each script:
 
-Pre-processing scripts:
+## Pre-processing scripts:
 - get_ndc_codes_shareable.R:
     - Obtain an API key from [this link](https://open.fda.gov/apis/authentication/). A csv file must be uploaded in the script under section 4, Execution. This can be any csv file with an NDC column.
 - meps_processor_2014.R:
@@ -76,7 +76,7 @@ Pre-processing scripts:
 - correlation_checker.R: 
     - Run superdataset.ipynb to generate super_integrated_data.csv.
 
-Base model scripts:
+## Base model scripts:
 - ann_super_dataset.ipynb:
     - Run superdataset.ipynb to generate the super_integrated_data.csv dataset.
 - realmlp_super_dataset.ipynb:
@@ -90,7 +90,7 @@ Base model scripts:
 - xgboost_super_threshold_tuning.ipynb:
     - Run superdataset.ipynb to generate the super_integrated_data.csv dataset. Run super_data_2022.ipynb to generate the super_data_2022.csv dataset. Run xgboost_super_dataset.ipynb to generate xgboost_all_versions_comparison.csv, xgboost_super_2022_per_drug_metrics.csv, xgboost_super_age_medians.joblib, xgboost_super_strength_medians.joblib, xgboost_super_day_supply_medians.joblib, and xgboost_super_final_model.ubj.
 
-Base model validation scripts:
+## Base model validation scripts:
 - ann_internal_validation.py:
     - Run super_data_2022.ipynb to generate the super_data_2022.csv dataset. Run xgboost_super_dataset.ipynb to generate xgboost_super_label_encoder.joblib (same across all models). Run ann_super_dataset.ipynb to generate knn_svm_preprocessor.joblib (saved in that notebook as knn_super_preprocessor.joblib and same between ANN/KNN and SVM models), knn_final_prebuilt_index.joblib, knn_super_clf_only.joblib, knn_super_age_medians.joblib, knn_super_strength_medians.joblib, and knn_super_day_supply_medians.joblib.
 - realmlp_internal_validation.py:
@@ -102,15 +102,17 @@ Base model validation scripts:
 - xgboost_internal_validation.py: 
     - Run super_data_2022.ipynb to generate the super_data_2022.csv dataset. Run xgboost_super_dataset.ipynb to generate xgboost_super_label_encoder.joblib, xgboost_super_final_model.ubj, xgboost_super_age_medians.joblib, xgboost_super_strength_medians.joblib, and xgboost_super_day_supply_medians.joblib. Run xgboost_super_threshold_tuning.ipynb to generate xgboost_threshold_map.joblib. 
 
+## Ensemble and full validation script:
 - ensemble_training_internal_validation_original.py:
     - Run all base model validation scripts to generate the _super_proba_2022.csv and _super_validation_summary.csv files. Run all base model scripts to generate the _super_per_drug_recall.csv, xgboost_super_label_encoder.joblib, and xgboost_threshold_map.joblib files. Run super_data_2022.ipynb to generate the super_data_2022.csv dataset. 
 
-Synthetic external data generation scripts:
+## Synthetic external data generation scripts:
 - app.R:
     - Access pharmuse.csv from data_dependencies. The pharmflush_functions.R file is included in the synthetic_external_data_generation_scripts folder with app.R. The file test_file.csv that is in that same folder can be used to upload to the Shiny app once deployed.
 - prescription_imputation_function.R:
     - Run superdataset.ipynb to generate the super_integrated_data.csv dataset. Use the Synthetic Population tab in app.R to generate files of the form synthetic_population_{city}.csv.
 
+## External data model application scripts:
 - synth-data-base-model-run-threshold-loop.py:
     - Run prescription_imputation_function.R to generate the files of the form CITY_demo_rx.csv. Run all base model scripts to generate the final model files xgboost_super_final_model.ubj, knn_super_clf_only.joblib, svm_super_final_model.joblib, tabicl_trained_model.pkl, and realmlp_super_final_model.joblib. The base model scripts will also generate knn_svm_preprocessor.joblib, xgboost_super_label_encoder.joblib, knn_final_prebuilt_index.joblib, and xgboost_threshold_map.joblib. 
 
@@ -120,7 +122,7 @@ Synthetic external data generation scripts:
 - ensemble_model_application_loop.py:
     - Run prescription_imputation_function.R to generate the files of the form CITY_demo_rx.csv. Run synth-data-base-model-run-threshold-loop.py to generate files in the form {city name}_{model name}_threshold_results.csv.gz. Run synth-data-facility-subsets.py to generate files in the form {city name}_{facility name}_{model name}_threshold_results.csv.gz. Run xgboost_super_dataset.ipynb to generate xgboost_super_label_encoder.joblib. Run ensemble_training_internal_validation_original.py to generate specialist_map_ensemble.joblib and comparison_per_drug.joblib. Access pharmuse.csv via data_dependencies folder (more info in [this paper](https://doi.org/10.1002/wer.70357), where PharmUse is Table S4). 
 
-Statistical analysis scripts:
+## Statistical analysis scripts:
 - analyze_city_differences.py:
     - Run ensemble_model_application_loop.py. This generates clark_county_nv_indiv_predictions_and_mass.csv, urbana_champaign_il_indiv_predictions_and_mass.csv, and sandwich_ma_indiv_predictions_and_mass.csv. These can be used to run the analyze_city_differences.py script. Notably, these CSV files can be swapped for other external data if other communities are simulated in ensemble_model_application_loop.py. 
 - analyze_drug_patterns_updated.py:
