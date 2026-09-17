@@ -22,8 +22,8 @@ OHE_SPARSE_KWARG = 'sparse_output' if version.parse(sklearn.__version__) >= vers
 # =============================================================================
 # 1. ACTIVE CITY — change this to switch between runs for your specific city
 # =============================================================================
-#ACTIVE_CITY = "clark_county_nv"
-ACTIVE_CITY = "urbana_champaign_il"
+ACTIVE_CITY = "clark_county_nv"
+#ACTIVE_CITY = "urbana_champaign_il"
 #ACTIVE_CITY = "sandwich_ma"
 
 CITY_DATASETS = {
