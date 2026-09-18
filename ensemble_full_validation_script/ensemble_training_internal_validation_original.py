@@ -156,6 +156,7 @@ specialist_df
 
 # APPLY THE SPECIALIST MAP FILTER BEFORE BUILDING PREDICTIONS/METRICS
 comparison_per_drug['Best_Model'] = comparison_per_drug['Drug'].map(specialist_map).fillna('None/Excluded')
+joblib.dump(comparison_per_drug, 'comparison_per_drug.joblib')
 
 # CONSTRUCT ENSEMBLE PROBABILITY MATRIX
 wta_proba_df = pd.DataFrame(0.0, index=common_obs_sorted, columns=drug_classes)
