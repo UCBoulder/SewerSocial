@@ -123,7 +123,7 @@ Send2Trash==2.1.0
 setuptools==70.2.0
 shellingham==1.5.4
 six==1.17.0
-soupsieve==2.8.4
+soupsieve==2.9
 stack-data==0.6.3
 statsmodels==0.14.6
 sympy==1.13.1
