@@ -151,6 +151,7 @@ specialist_df = pd.DataFrame(
     list(specialist_map.items()), columns=['Drug', 'Best_Model']
 )
 specialist_df.to_csv('specialist_map.csv', index=False)
+joblib.dump(specialist_map, 'specialist_map.joblib')
 specialist_df
 
 # APPLY THE SPECIALIST MAP FILTER BEFORE BUILDING PREDICTIONS/METRICS
