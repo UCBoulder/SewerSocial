@@ -120,7 +120,7 @@ The MEPS data are available [here](https://data.mendeley.com/preview/wfmjbyjmk2?
     - Run synth-data-base-model-run-threshold-loop.py to generate files in the form {city name}_{model name}_threshold_results.csv.gz.
 
 - ensemble_model_application_loop.py:
-    - Run prescription_imputation_function.R to generate the files of the form CITY_demo_rx.csv. Run synth-data-base-model-run-threshold-loop.py to generate files in the form {city name}_{model name}_threshold_results.csv.gz. Run synth-data-facility-subsets.py to generate files in the form {city name}_{facility name}_{model name}_threshold_results.csv.gz. Run xgboost_super_dataset.ipynb to generate xgboost_super_label_encoder.joblib. Run ensemble_training_internal_validation_original.py to generate specialist_map_ensemble.joblib and comparison_per_drug.joblib. Access pharmuse.csv via data_dependencies folder (more info in [this paper](https://doi.org/10.1002/wer.70357), where PharmUse is Table S4). 
+    - Run prescription_imputation_function.R to generate the files of the form CITY_demo_rx.csv. Run synth-data-base-model-run-threshold-loop.py to generate files in the form {city name}_{model name}_threshold_results.csv.gz. Run synth-data-facility-subsets.py to generate files in the form {city name}_{facility name}_{model name}_threshold_results.csv.gz. Run xgboost_super_dataset.ipynb to generate xgboost_super_label_encoder.joblib. Run ensemble_training_internal_validation_original.py to generate specialist_map.joblib and comparison_per_drug.joblib. Access pharmuse.csv via data_dependencies folder (more info in [this paper](https://doi.org/10.1002/wer.70357), where PharmUse is Table S4). 
 
 ## Statistical analysis scripts:
 - analyze_city_differences.py:
