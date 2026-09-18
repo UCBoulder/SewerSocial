@@ -227,7 +227,7 @@ drug_classes     = list(le.classes_)
 no_presc_col_idx = drug_classes.index('no prescriptions')
 print(f"LabelEncoder loaded. Drug classes: {len(drug_classes)}")
 
-specialist_map = joblib.load(os.path.join(DATA_DIR, 'specialist_map_ensemble.joblib'))
+specialist_map = joblib.load(os.path.join(DATA_DIR, 'specialist_map.joblib'))
 print(f"Specialist map loaded: {len(specialist_map)} expert assignments.")
 
 comparison_per_drug = joblib.load(os.path.join(DATA_DIR, 'comparison_per_drug.joblib'))
