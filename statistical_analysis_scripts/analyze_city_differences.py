@@ -146,7 +146,7 @@ df_distribution = pd.DataFrame(distribution_results)
 # --------------------------------------------------------------------------
 # Write statistical analysis results to Excel workbook
 # --------------------------------------------------------------------------
-print(f"\n5. Exporting complete results to {OUTPUT_XLSX}")
+print(f"\nExporting complete results to {OUTPUT_XLSX}")
 with pd.ExcelWriter(OUTPUT_XLSX, engine='openpyxl') as writer:
     mass_comparison.to_excel(writer, sheet_name='Mass_Loads_and_Fold_Changes')
     df_categorical.to_excel(writer, sheet_name='Presence_ChiSq_Effect_Sizes', index=False)
@@ -178,18 +178,22 @@ drug_counts['Prescription_Rate_Pct'] = (drug_counts['Rx_Count'] / drug_counts['C
 apis_to_plot_fig1 = [
     'amoxicillin',
     'cefdinir',
-    'chlorhexidine',
+    'clobetasol',
     'dorzolamide',
     'fluticasone',
+    'hydrocortisone',
     'imiquimod',
     'lactulose',
     'levofloxacin',
+    'methotrexate',
     'mupirocin',
     'nitroglycerin',
+    'ofloxacin',
     'ondansetron',
     'oxymetazoline',
-    'triamcinolone',
-    'no prescriptions' # add this line to get "no prescriptions" bars (manually added into Fig1 to preserve scaling)
+    'senna',
+    'triamcinolone'
+    #'no prescriptions' # add this line to get "no prescriptions" bars (manually added into Fig1 to preserve scaling)
 ]
 
 df_fig1 = drug_counts[drug_counts['Drug'].isin(apis_to_plot_fig1)]
@@ -216,16 +220,20 @@ fc_long['Log2_Fold_Change'] = np.log2(fc_long['Fold_Change'])
 apis_to_plot_fig2 = [
     'amoxicillin',
     'cefdinir',
-    'chlorhexidine',
+    'clobetasol',
     'dorzolamide',
     'fluticasone',
+    'hydrocortisone',
     'imiquimod',
     'lactulose',
     'levofloxacin',
+    'methotrexate',
     'mupirocin',
     'nitroglycerin',
+    'ofloxacin',
     'ondansetron',
     'oxymetazoline',
+    'senna',
     'triamcinolone'
 ]
 
