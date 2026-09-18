@@ -260,7 +260,12 @@ def load_proba_dict(model_files):
         if not os.path.exists(path):
             print(f"  SKIPPING: {model_name} ({fname} not found)")
             continue
-        df = pd.read_csv(path, sep=None, engine='python', encoding='utf-8-sig')
+        df = pd.read_csv(
+            path,
+            sep=',',                
+            encoding='utf-8-sig',
+            dtype={c: np.float32 for c in drug_classes},  
+        )
         df['Observation_ID'] = df['Observation_ID'].astype(str)
         df = df.set_index('Observation_ID')[drug_classes]
         proba_dict[model_name] = df
@@ -268,8 +273,7 @@ def load_proba_dict(model_files):
     return proba_dict
 
 def build_wta_matrix(proba_dict, common_obs):
-    """Assemble the WTA probability matrix routing each drug to its best model."""
-    wta_proba_df = pd.DataFrame(0.0, index=common_obs, columns=drug_classes)
+    wta_proba_df = pd.DataFrame(0.0, index=common_obs, columns=drug_classes, dtype=np.float32)
     for _, row in comparison_per_drug.iterrows():
         drug       = row['Drug']
         best_model = row['Best_Model']
@@ -459,6 +463,9 @@ def run_ensemble(config):
     print(wastewater_summary.head(10).to_string(index=False))
     print(f"\n✅ COMPLETE: {name}")
 
+    del proba_dict, wta_proba_matrix, final_population_registry, wastewater_summary
+    import gc
+    gc.collect()
 
 # =============================================================================
 # 6. RUN ALL 13 DATASETS
